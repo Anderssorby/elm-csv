@@ -40,6 +40,9 @@ splitLine =
     splitLineWith "" "abc"
     --> ["abc"]
 
+    splitLineWith "," ",a,b,c"
+    --> ["", "a", "b", "c"]
+
     splitLineWith "" ""
     --> []
 
@@ -49,14 +52,14 @@ splitLine =
 -}
 splitLineWith : String -> String -> List String
 splitLineWith separator line =
-    parseRemaining separator False line []
+    parseRemaining separator False True line []
         |> List.reverse
 
 
-parseRemaining : String -> Bool -> String -> List String -> List String
-parseRemaining separator quoted remaining done =
+parseRemaining : String -> Bool -> Bool -> String -> List String -> List String
+parseRemaining separator quoted startOfLine remaining result =
     if remaining == "" then
-        done
+        result
 
     else if separator /= "" && not quoted && String.startsWith separator remaining then
         let
@@ -65,16 +68,23 @@ parseRemaining separator quoted remaining done =
 
             nextChars =
                 String.dropLeft (String.length separator) remaining
+
+            newResult =
+                if startOfLine then
+                    [ "", "" ]
+
+                else
+                    "" :: result
         in
-        parseRemaining separator False nextChars ("" :: done)
+        parseRemaining separator False False nextChars newResult
 
     else
         let
             current =
-                List.head done |> Maybe.withDefault ""
+                List.head result |> Maybe.withDefault ""
 
             others =
-                List.tail done |> Maybe.withDefault []
+                List.tail result |> Maybe.withDefault []
 
             nextChar =
                 String.slice 0 1 remaining
@@ -117,4 +127,4 @@ parseRemaining separator quoted remaining done =
             newDone =
                 (current ++ newChar) :: others
         in
-        parseRemaining separator newQuoted nextChars newDone
+        parseRemaining separator newQuoted False nextChars newDone
